@@ -10,6 +10,8 @@ from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User
 #from models import Person
+import uuid
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -29,26 +31,27 @@ def handle_invalid_usage(error):
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
-'''
-@app.route('/user', methods=['GET'])
-def handle_hello():
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
-
-    return jsonify(response_body), 200
-'''
 @app.route('/user', methods=["GET"])
 def lista_usuarios():
     users = User.query.all()
     request_body = list(map(lambda user:user.serialize(),users))
     return jsonify(request_body),200
 
+@app.route('/user/<id>', methods=["GET"])
+def lista_un_usuario(id):
+    user1 = User.query.filter_by(id=id).first()
+    if user1 is None:
+        return APIException("No se encontro el usuario",status_code=404)
+    request_body = user1.serialize()
+    return jsonify(request_body),200
+
+
 @app.route('/user', methods=["POST"])
 def crear_usuarios():
-    request_body = request.get_json()
-    user1 = User(username=request_body["username"],email=request_body["email"],password=request_body["password"])
+    data = request.get_json()
+    hashed_password = generate_password_hash(data["password"],method='sha256')
+    user1 = User(username=data["username"],email=data["email"],password=hashed_password)
     db.session.add(user1)
     db.session.commit()
     return jsonify("Message : Se adiciono un usuario!"),200
