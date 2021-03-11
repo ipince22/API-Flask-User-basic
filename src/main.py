@@ -29,7 +29,7 @@ def handle_invalid_usage(error):
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
-
+'''
 @app.route('/user', methods=['GET'])
 def handle_hello():
 
@@ -38,6 +38,42 @@ def handle_hello():
     }
 
     return jsonify(response_body), 200
+'''
+@app.route('/user', methods=["GET"])
+def lista_usuarios():
+    users = User.query.all()
+    request_body = list(map(lambda user:user.serialize(),users))
+    return jsonify(request_body),200
+
+@app.route('/user', methods=["POST"])
+def crear_usuarios():
+    request_body = request.get_json()
+    user1 = User(username=request_body["username"],email=request_body["email"],password=request_body["password"])
+    db.session.add(user1)
+    db.session.commit()
+    return jsonify("Message : Se adiciono un usuario!"),200
+
+@app.route('/user/<id>', methods=["PUT"])
+def update_usuarios(id):
+    request_body = request.get_json()
+    user1 = User.query.get(id)
+    if user1 is None:
+        raise APIException("usuario no existe!", status_code=404)
+    
+    if "email" in request_body:
+        user1.email = request_body["email"]
+    db.session.commit()
+    
+    return jsonify("usuario Update, OK!"),200
+
+@app.route('/user/<id>', methods=["DELETE"])
+def delete_usuarios(id):
+    user1 = User.query.get(id)
+    if user1 is None:
+        raise APIException("usuario no existe!",status_code=404)
+    db.session.delete(user1)
+    db.session.commit()
+    return jsonify("Registro eliminado,ok!"),200
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
